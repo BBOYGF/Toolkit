@@ -1,0 +1,28 @@
+plugins {
+    id 'java'
+}
+
+group 'org.example'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+
+    implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
+    implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
+
+    implementation 'org.seleniumhq.selenium:selenium-java:4.6.0'
+    implementation 'com.squareup.okhttp3:okhttp:4.10.0'
+    implementation 'org.jsoup:jsoup:1.15.3'
+    implementation 'com.google.code.gson:gson:2.10'
+    implementation 'cn.hutool:hutool-all:5.8.10'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.0'
+}
+
+test {
+    useJUnitPlatform()
+}
