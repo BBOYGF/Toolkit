@@ -31,7 +31,7 @@ import static utils.enums.LoadWebType.GET;
  */
 
 public class CrawlerUtil {
-    private Logger log = LoggerFactory.getLogger(getClass());
+    private final Logger log = LoggerFactory.getLogger(getClass());
     private OkHttpClient client;
 
     /**
@@ -47,16 +47,6 @@ public class CrawlerUtil {
             Proxy proxy = new Proxy(Proxy.Type.SOCKS, new InetSocketAddress("localhost", 1080));
             final String proxyUsername = "guo";
             final String proxyPassword = "guo";
-            Authenticator proxyAuthenticator = new Authenticator() {
-                @Override
-                public Request authenticate(Route route, Response response) {
-                    // 使用Basic认证生成代理服务器需要的凭据
-                    String credential = Credentials.basic(proxyUsername, proxyPassword);
-                    return response.request().newBuilder()
-                            .header("Proxy-Authorization", credential)
-                            .build();
-                }
-            };
             client = new OkHttpClient.Builder()
                     .proxy(proxy)
                     .connectTimeout(30, TimeUnit.SECONDS)
