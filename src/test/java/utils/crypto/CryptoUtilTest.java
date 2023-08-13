@@ -34,7 +34,9 @@ class CryptoUtilTest {
         PrivateKey privateKey1 = CryptoUtil.loadPrivateKey(privateKeyString);
 
         // 要加密的明文
-        String plaintext = "测试一下是否被加密";
+        String plaintext = "测试一下是否被加试测试测测试测试测试测试测试测试测试测试测试测试测试测试测试测试测试测试测试测试测试测试测试测试测试测试测试测试测试测试测试测试测试测试测试测试测试";
+        byte[] bytes = plaintext.getBytes(StandardCharsets.UTF_8);
+        logger.info("当前文件长度:{}", bytes.length);
 
         // 加密
         byte[] ciphertext = CryptoUtil.encrypt(plaintext, publicKey1);

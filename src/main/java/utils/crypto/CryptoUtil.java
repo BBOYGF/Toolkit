@@ -1,11 +1,17 @@
 package utils.crypto;
 
+import com.google.gson.Gson;
+import utils.crypto.pojo.RegisterPo;
+
 import javax.crypto.Cipher;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
-import java.util.Base64;
+import java.util.*;
+import java.util.function.IntFunction;
 
 /**
  * 加密工具类 封装一些常用的加密算法
@@ -42,6 +48,15 @@ import java.util.Base64;
  */
 public class CryptoUtil {
 
+    public static final int DATA_LENGTH = 245;
+    public static final int DECODER_DATA_LENGTH = 256;
+
+    /**
+     * 获取秘钥对
+     *
+     * @return 密钥对
+     * @throws Exception
+     */
     public static KeyPair generateKeyPair() throws Exception {
         KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
         keyPairGenerator.initialize(2048);
@@ -51,14 +66,67 @@ public class CryptoUtil {
     public static byte[] encrypt(String plaintext, PublicKey publicKey) throws Exception {
         Cipher cipher = Cipher.getInstance("RSA");
         cipher.init(Cipher.ENCRYPT_MODE, publicKey);
-        return cipher.doFinal(plaintext.getBytes(StandardCharsets.UTF_8));
+        byte[] bytes = plaintext.getBytes(StandardCharsets.UTF_8);
+        int count = bytes.length / DATA_LENGTH;
+        int m = bytes.length % DATA_LENGTH;
+        int k = 0;
+        List<byte[]> bytesArray = new ArrayList<>();
+        for (int j = 0; j < count; j++) {
+            byte[] copyOfRange = Arrays.copyOfRange(bytes, k, k + DATA_LENGTH);
+            byte[] encryptArray = cipher.doFinal(copyOfRange);
+            bytesArray.add(encryptArray);
+            k += DATA_LENGTH;
+        }
+        if (m != 0) {
+            byte[] copyOfRange = Arrays.copyOfRange(bytes, k, k + m);
+            byte[] encryptArray = cipher.doFinal(copyOfRange);
+            bytesArray.add(encryptArray);
+        }
+        byte[] toArray = convertListToArray(bytesArray);
+        return toArray;
     }
 
     public static String decrypt(byte[] ciphertext, PrivateKey privateKey) throws Exception {
         Cipher cipher = Cipher.getInstance("RSA");
         cipher.init(Cipher.DECRYPT_MODE, privateKey);
-        byte[] plaintextBytes = cipher.doFinal(ciphertext);
-        return new String(plaintextBytes, StandardCharsets.UTF_8);
+        List<byte[]> bytes = new ArrayList<>();
+        int i1 = (ciphertext.length / DECODER_DATA_LENGTH);
+        int i2 = ciphertext.length % DECODER_DATA_LENGTH;
+        int k = 0;
+        for (int i = 0; i < i1; i++) {
+            byte[] bytes1 = Arrays.copyOfRange(ciphertext, k, k + DECODER_DATA_LENGTH);
+            byte[] plaintextBytes = cipher.doFinal(bytes1);
+            bytes.add(plaintextBytes);
+            k += DECODER_DATA_LENGTH;
+        }
+        if (i2 != 0) {
+            byte[] bytes1 = Arrays.copyOfRange(ciphertext, k, ciphertext.length - 1);
+            byte[] plaintextBytes = cipher.doFinal(bytes1);
+            bytes.add(plaintextBytes);
+        }
+        byte[] bytes1 = convertListToArray(bytes);
+//        byte[] plaintextBytes = cipher.doFinal(bytes1);
+        return new String(bytes1, StandardCharsets.UTF_8);
+    }
+
+    public static byte[] convertListToArray(List<byte[]> byteList) {
+        // 计算目标数组的总长度
+        int totalLength = 0;
+        for (byte[] bytes : byteList) {
+            totalLength += bytes.length;
+        }
+
+        // 创建目标数组
+        byte[] result = new byte[totalLength];
+
+        // 逐个复制元素到目标数组
+        int currentIndex = 0;
+        for (byte[] bytes : byteList) {
+            System.arraycopy(bytes, 0, result, currentIndex, bytes.length);
+            currentIndex += bytes.length;
+        }
+
+        return result;
     }
 
     public static PublicKey loadPublicKey(String publicKeyString) throws Exception {
@@ -83,5 +151,40 @@ public class CryptoUtil {
     public static String getPrivateKeyString(PrivateKey privateKey) {
         byte[] privateKeyBytes = privateKey.getEncoded();
         return Base64.getEncoder().encodeToString(privateKeyBytes);
+    }
+
+    /**
+     * 生成令牌
+     */
+    public String generateToken(String transactionId, String deviceId, Date overDate, File saveFile) throws Exception {
+
+        RegisterPo registerPo = new RegisterPo();
+        registerPo.setTransactionId(transactionId);
+        registerPo.setRegistrationExpiry(overDate);
+        registerPo.setDeviceId(deviceId);
+        Gson gson = new Gson();
+        String msgSessionStr = gson.toJson(registerPo);
+
+        KeyPair keyPair = CryptoUtil.generateKeyPair();
+        PublicKey aPublic = keyPair.getPublic();
+        PrivateKey aPrivate = keyPair.getPrivate();
+        String privateKeyString = CryptoUtil.getPrivateKeyString(aPrivate);
+
+        String publicKeyString = CryptoUtil.getPublicKeyString(aPublic);
+        byte[] encrypt = CryptoUtil.encrypt(msgSessionStr, aPublic);
+        String encodeToString = Base64.getEncoder().encodeToString(encrypt);
+        String token = encodeToString + "." + privateKeyString;
+        byte[] bytes = token.getBytes(StandardCharsets.UTF_8);
+        if (saveFile == null) {
+            return token;
+        }
+        if (!saveFile.exists()) {
+            saveFile.createNewFile();
+        }
+        FileOutputStream fileOutputStream = new FileOutputStream(saveFile);
+        fileOutputStream.write(bytes);
+        fileOutputStream.flush();
+        fileOutputStream.close();
+        return token;
     }
 }
