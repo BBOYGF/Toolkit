@@ -11,7 +11,6 @@ import java.security.*;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.*;
-import java.util.function.IntFunction;
 
 /**
  * 加密工具类 封装一些常用的加密算法
@@ -155,21 +154,25 @@ public class CryptoUtil {
 
     /**
      * 生成令牌
+     *
+     * @param transactionId 订单好
+     * @param deviceId      设备号
+     * @param overDate      结束数据
+     * @param saveFile      保存文件
+     * @return token 字符串
+     * @throws Exception 异常
      */
     public String generateToken(String transactionId, String deviceId, Date overDate, File saveFile) throws Exception {
-
         RegisterPo registerPo = new RegisterPo();
         registerPo.setTransactionId(transactionId);
         registerPo.setRegistrationExpiry(overDate);
         registerPo.setDeviceId(deviceId);
         Gson gson = new Gson();
         String msgSessionStr = gson.toJson(registerPo);
-
         KeyPair keyPair = CryptoUtil.generateKeyPair();
         PublicKey aPublic = keyPair.getPublic();
         PrivateKey aPrivate = keyPair.getPrivate();
         String privateKeyString = CryptoUtil.getPrivateKeyString(aPrivate);
-
         String publicKeyString = CryptoUtil.getPublicKeyString(aPublic);
         byte[] encrypt = CryptoUtil.encrypt(msgSessionStr, aPublic);
         String encodeToString = Base64.getEncoder().encodeToString(encrypt);
