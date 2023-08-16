@@ -158,11 +158,10 @@ public class CryptoUtil {
      * @param transactionId 订单好
      * @param deviceId      设备号
      * @param overDate      结束数据
-     * @param saveFile      保存文件
      * @return token 字符串
      * @throws Exception 异常
      */
-    public String generateToken(String transactionId, String deviceId, Date overDate, File saveFile) throws Exception {
+    public static String generateLicence(String transactionId, String deviceId, Date overDate) throws Exception {
         RegisterPo registerPo = new RegisterPo();
         registerPo.setTransactionId(transactionId);
         registerPo.setRegistrationExpiry(overDate);
@@ -177,17 +176,7 @@ public class CryptoUtil {
         byte[] encrypt = CryptoUtil.encrypt(msgSessionStr, aPublic);
         String encodeToString = Base64.getEncoder().encodeToString(encrypt);
         String token = encodeToString + "." + privateKeyString;
-        byte[] bytes = token.getBytes(StandardCharsets.UTF_8);
-        if (saveFile == null) {
-            return token;
-        }
-        if (!saveFile.exists()) {
-            saveFile.createNewFile();
-        }
-        FileOutputStream fileOutputStream = new FileOutputStream(saveFile);
-        fileOutputStream.write(bytes);
-        fileOutputStream.flush();
-        fileOutputStream.close();
         return token;
     }
+
 }
