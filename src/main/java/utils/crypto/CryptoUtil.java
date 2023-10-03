@@ -4,8 +4,6 @@ import com.google.gson.Gson;
 import utils.crypto.pojo.RegisterPo;
 
 import javax.crypto.Cipher;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.security.spec.PKCS8EncodedKeySpec;
@@ -81,12 +79,11 @@ public class CryptoUtil {
             byte[] encryptArray = cipher.doFinal(copyOfRange);
             bytesArray.add(encryptArray);
         }
-        byte[] toArray = convertListToArray(bytesArray);
-        return toArray;
+        return convertListToArray(bytesArray);
     }
 
     public static String decrypt(byte[] ciphertext, PrivateKey privateKey) throws Exception {
-        Cipher cipher = Cipher.getInstance("RSA");
+        Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
         cipher.init(Cipher.DECRYPT_MODE, privateKey);
         List<byte[]> bytes = new ArrayList<>();
         int i1 = (ciphertext.length / DECODER_DATA_LENGTH);
